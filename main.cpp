@@ -2,6 +2,7 @@
 #include <string>
 #include <algorithm>
 #include <time.h>
+#include <numeric>
 
 #include "RBFNetwork.h"
 #include "BasicExcel.hpp"
@@ -67,6 +68,44 @@ int main()
 	random_shuffle(perm.begin(),perm.end());
 	for(int i =0 ;i<training_data.size() ; i++) training_data[perm[i]] = temp[i],training_labels[perm[i]] = temp2[i];
 
+	//preprocess
+	datapoint mean_all,std_all;
+	for(int i=0;i<training_data[0].size();i++)
+	{
+		datapoint v;
+		for (int k=0;k<training_data.size();k++)
+		{
+			v.push_back(training_data[k][i]);
+		}
+		double sum = std::accumulate(v.begin(), v.end(), 0.0);
+		double mean = sum / v.size();
+		std::vector<double> diff(v.size());
+		std::transform(v.begin(), v.end(), diff.begin(),
+               				std::bind2nd(std::minus<double>(), mean));
+		double sq_sum = std::inner_product(diff.begin(), diff.end(), diff.begin(), 0.0);
+		double stdev = std::sqrt(sq_sum / v.size());
+		mean_all.push_back(mean);
+		std_all.push_back(stdev);
+	}
+	////TODO
+	// for(int r=0;r<training_data.size();r++)
+	// {
+	// 	for(int c=0;c<training_data[r].size();c++)
+	// 	{
+	// 		double a=(training_data[r][c]-mean_all[c])/std_all[c];
+	// 		training_data[r][c]=a;
+	// 	}
+	// }
+	// for(int r=0;r<testing_data.size();r++)
+	// {
+	// 	for(int c=0;c<testing_data[r].size();c++)
+	// 	{
+	// 		double a=(testing_data[r][c]-mean_all[c])/std_all[c];
+	// 		testing_data[r][c]=a;
+	// 	}
+	// }
+
+	//Train RBF
 	RBFNetwork RBFNN(training_data, training_labels, testing_data, testing_labels, num_predict);
 	// Experimenting results for different number of RBF units and learning rates
 	double bestmse=1e7;
@@ -92,6 +131,7 @@ int main()
 		}
 	}
 
+	//print the prediction as xls format
 	printf("The Best RBF Network: units=%d, learning_rate=%f, test_mse=%f\n", bestunits,bestlr,bestmse);
   	BasicExcelWorksheet* sheet = e.AddWorksheet("Predict", 1);
   	sheet = e.GetWorksheet(1);

@@ -18,16 +18,16 @@ public:
 		Saves the output model to be used in testing and single predictions 
 		return accuracy and mse (by reference)
 		*/
-	double startTraining(int num_rbf_units, double learning_rate, int num_iterations, double &mse, bool print_flag = false);
+	void startTraining(int num_rbf_units, double learning_rate, int num_iterations, double &mse, bool print_flag = false);
 
 	/* Start Testing the RBF Network to make sure it's not overfitting
 		(Should be done after training) */
-	void startTesting(const std::vector<datapoint> &testing_data, const std::vector<datapoint> &testing_labels);
+	std::vector<datapoint> startTesting(const std::vector<datapoint> &testing_data, const std::vector<datapoint> &testing_labels, double &mse);
 
 	
 	/* Predict a single data point support multi-classes (One vs. All method)
 		(Should be done after training of course) */
-	int predictLabel(const datapoint &data_point, const datapoint &data_label, double &error);
+	datapoint predictLabel(const datapoint &data_point, const datapoint &data_label, double &error);
 
 	//TODO
 	void saveModel();
@@ -37,7 +37,7 @@ private:
 	int num_of_labels;
 	double gamma;
 	std::vector<datapoint> training_data;
-	std::vector<int> training_labels;
+	std::vector<datapoint> training_labels;
 	std::vector< std::vector<double> > rbf_units;
 	std::vector< std::vector<double> > layer2_weights;
 	std::vector<datapoint> rbf_centroids;

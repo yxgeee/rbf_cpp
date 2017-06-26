@@ -11,7 +11,7 @@ RBFNetwork::~RBFNetwork(void)
 {
 }
 
-double RBFNetwork::startTraining(int num_rbf_units, double learning_rate, int num_iterations, double &mse, bool print_flag)
+void RBFNetwork::startTraining(int num_rbf_units, double learning_rate, int num_iterations, double &mse, bool print_flag)
 {
 	if(print_flag)
 	{
@@ -58,14 +58,10 @@ double RBFNetwork::startTraining(int num_rbf_units, double learning_rate, int nu
 		{
 			// Gathering Statistics
 			mse = 0.0;
-			// accuracy=0;
-			// vector<int> labelFreq(num_of_labels);
 			for(int i = 0 ; i<training_data.size() ; i++)
 			{
 				double error_dir=0;
-				predictLabel(training_data[i], training_labels[i], error_dir);
-				// ++labelFreq[prediction];
-				// if(prediction == training_labels[i])accuracy++;
+				datapoint predict_data=predictLabel(training_data[i], training_labels[i], error_dir);
 				mse += error_dir;
 			}
 			mse *= (double)(1.0/((double)training_data.size()*(double)num_of_labels));
@@ -79,7 +75,6 @@ double RBFNetwork::startTraining(int num_rbf_units, double learning_rate, int nu
 	}
 	if(print_flag)
 		printf("\n----------------------------\n");
-	return mse;
 }
 
 void RBFNetwork::buildRBFUnits()
@@ -113,28 +108,21 @@ double RBFNetwork::distance(const datapoint &a, const datapoint &b)
 	return dist;
 }
 
-int RBFNetwork::predictLabel(const datapoint &data_point, const datapoint &data_label,double &error)
+datapoint RBFNetwork::predictLabel(const datapoint &data_point, const datapoint &data_label,double &error)
 {
-	// double maxi=-1e18;
-	// int bestLabel=-1;
 	vector<double> cur_rbf_unit;
 	for(int j = 0 ; j<rbf_centroids.size() ; j++)
 		cur_rbf_unit.push_back(basisFunction(data_point, rbf_centroids[j]));
 	// Get the label with maximum hypothesis
+	datapoint predict_data;
 	for(int label = 0 ; label<num_of_labels ; label++)
 	{
 		double hypothesis = Utility::multiplyVectors(cur_rbf_unit, layer2_weights[label]);
 		double error_direction = (data_label[label]-hypothesis);
 		error += error_direction*error_direction;
-		// if(maxi<hypothesis)
-		// {
-		// 	maxi = hypothesis;
-		// 	bestLabel = label;
-		// }
+		predict_data.push_back(hypothesis);
 	}
-	// assert(bestLabel!=-1);
-	// error = (double)bestLabel-maxi;
-	return 1;
+	return predict_data;
 }
 
 void RBFNetwork::calculateGamma()
@@ -148,18 +136,19 @@ void RBFNetwork::calculateGamma()
 }
 
 
-void RBFNetwork::startTesting(const std::vector<datapoint> &testing_data, const std::vector<datapoint> &testing_labels)
+std::vector<datapoint> RBFNetwork::startTesting(const std::vector<datapoint> &testing_data, const std::vector<datapoint> &testing_labels, double &mse)
 {
 	printf("Testing...\n");
-	double mse=0,err=0;
+	double err=0;
+	std::vector<datapoint> predict_test;
 	for(int i = 0 ; i<testing_data.size() ; i++)
 	{
-		predictLabel(testing_data[i],testing_labels[i],err);
+		datapoint predict_data = predictLabel(testing_data[i],testing_labels[i],err);
 		mse += err;
+		predict_test.push_back(predict_data);
 	}
 	mse *= (double)(1.0/((double)testing_data.size()*(double)num_of_labels));	
-	// acc *= (1.0/(double)testing_data.size());
-	// mse *= (1.0/(double)testing_data.size());
 	printf("Testing Results MSE = %.6f\n",mse);
 	printf("------------------------------\n");
+	return predict_test;
 }

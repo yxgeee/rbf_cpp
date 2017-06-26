@@ -10,7 +10,7 @@ typedef std::vector<double> datapoint;
 class RBFNetwork
 {
 public:
-	RBFNetwork(const std::vector<datapoint> &training_data, const std::vector<datapoint> &training_labels, int num_of_labels);
+	RBFNetwork(const std::vector<datapoint> &training_data, const std::vector<datapoint> &training_labels, const std::vector<datapoint> &testing_data, const std::vector<datapoint> &testing_labels, int num_of_labels);
 	~RBFNetwork(void);
 
 	/* Start Training the Radial Basis Function network
@@ -18,11 +18,11 @@ public:
 		Saves the output model to be used in testing and single predictions 
 		return accuracy and mse (by reference)
 		*/
-	void startTraining(int num_rbf_units, double learning_rate, int num_iterations, double &mse, bool print_flag = false);
+	std::vector<datapoint> startTraining(int num_rbf_units, double learning_rate, int num_iterations, double &mse, bool print_flag = false);
 
 	/* Start Testing the RBF Network to make sure it's not overfitting
 		(Should be done after training) */
-	std::vector<datapoint> startTesting(const std::vector<datapoint> &testing_data, const std::vector<datapoint> &testing_labels, double &mse);
+	std::vector<datapoint> startTesting(const std::vector<datapoint> &test_data, const std::vector<datapoint> &test_labels, double &mse);
 
 	
 	/* Predict a single data point support multi-classes (One vs. All method)
@@ -38,6 +38,8 @@ private:
 	double gamma;
 	std::vector<datapoint> training_data;
 	std::vector<datapoint> training_labels;
+	std::vector<datapoint> testing_data;
+	std::vector<datapoint> testing_labels;
 	std::vector< std::vector<double> > rbf_units;
 	std::vector< std::vector<double> > layer2_weights;
 	std::vector<datapoint> rbf_centroids;

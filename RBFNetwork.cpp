@@ -2,8 +2,8 @@
 
 using namespace std;
 
-RBFNetwork::RBFNetwork(const vector<datapoint> &training_data, const vector<datapoint> &training_labels, int num_of_labels)
-	: training_data(training_data), training_labels(training_labels), num_of_labels(num_of_labels)
+RBFNetwork::RBFNetwork(const vector<datapoint> &training_data, const vector<datapoint> &training_labels, const vector<datapoint> &testing_data, const vector<datapoint> &testing_labels, int num_of_labels)
+	: training_data(training_data), training_labels(training_labels), testing_data(testing_data), testing_labels(testing_labels),num_of_labels(num_of_labels)
 	, random_real_gen(-1, 1), random_engine(rd())
 {}
 
@@ -11,7 +11,7 @@ RBFNetwork::~RBFNetwork(void)
 {
 }
 
-void RBFNetwork::startTraining(int num_rbf_units, double learning_rate, int num_iterations, double &mse, bool print_flag)
+std::vector<datapoint> RBFNetwork::startTraining(int num_rbf_units, double learning_rate, int num_iterations, double &mse, bool print_flag)
 {
 	if(print_flag)
 	{
@@ -38,7 +38,9 @@ void RBFNetwork::startTraining(int num_rbf_units, double learning_rate, int num_
 			arc = random_real_gen(random_engine);
 
 	// Train the second layer weights
-	mse = 0;
+	mse=0.0;
+	double best_mse = 1e7;
+	vector<datapoint> best_prediction;
 	// double accuracy=0;
 	for(int iter = 0 ; iter<num_iterations ; iter++)
 	{	
@@ -65,9 +67,15 @@ void RBFNetwork::startTraining(int num_rbf_units, double learning_rate, int num_
 				mse += error_dir;
 			}
 			mse *= (double)(1.0/((double)training_data.size()*(double)num_of_labels));
-			// accuracy *= (double)(1.0/(double)training_data.size());
-			printf("Training (%*d/%d), MSE=[%.3f], Progress [%.2f]\r",
-				2, (iter+1), num_iterations, mse, ((double)((double)(iter+1)/(double)num_iterations) * 100.0));
+			double test_mse=0.0;
+			vector<datapoint> prediction = startTesting(testing_data,testing_labels,test_mse);
+			printf("Training (%*d/%d), MSE=[%.3f], TEST_MSE=[%.3f] Progress [%.2f]\r",
+				2, (iter+1), num_iterations, mse, test_mse,((double)((double)(iter+1)/(double)num_iterations) * 100.0));
+			if (test_mse<best_mse)
+			{
+				best_mse=test_mse;
+				best_prediction=prediction;
+			}
 		}
 
 		if(mse < 1e-9)
@@ -75,6 +83,8 @@ void RBFNetwork::startTraining(int num_rbf_units, double learning_rate, int num_
 	}
 	if(print_flag)
 		printf("\n----------------------------\n");
+	mse=best_mse;
+	return best_prediction;
 }
 
 void RBFNetwork::buildRBFUnits()
@@ -136,19 +146,19 @@ void RBFNetwork::calculateGamma()
 }
 
 
-std::vector<datapoint> RBFNetwork::startTesting(const std::vector<datapoint> &testing_data, const std::vector<datapoint> &testing_labels, double &mse)
+std::vector<datapoint> RBFNetwork::startTesting(const std::vector<datapoint> &test_data, const std::vector<datapoint> &test_labels, double &mse)
 {
-	printf("Testing...\n");
+	// printf("Testing...\n");
 	double err=0;
 	std::vector<datapoint> predict_test;
-	for(int i = 0 ; i<testing_data.size() ; i++)
+	for(int i = 0 ; i<test_data.size() ; i++)
 	{
-		datapoint predict_data = predictLabel(testing_data[i],testing_labels[i],err);
+		datapoint predict_data = predictLabel(test_data[i],test_labels[i],err);
 		mse += err;
 		predict_test.push_back(predict_data);
 	}
-	mse *= (double)(1.0/((double)testing_data.size()*(double)num_of_labels));	
-	printf("Testing Results MSE = %.6f\n",mse);
-	printf("------------------------------\n");
+	mse *= (double)(1.0/((double)test_data.size()*(double)num_of_labels));	
+	// printf("Testing Results MSE = %.6f\n",mse);
+	// printf("------------------------------\n");
 	return predict_test;
 }

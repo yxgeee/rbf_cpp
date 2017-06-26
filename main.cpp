@@ -67,31 +67,24 @@ int main()
 	random_shuffle(perm.begin(),perm.end());
 	for(int i =0 ;i<training_data.size() ; i++) training_data[perm[i]] = temp[i],training_labels[perm[i]] = temp2[i];
 
-	RBFNetwork RBFNN(training_data, training_labels, num_predict);
-	// double mse=0;
-	// RBFNN.startTraining(11, 0.005, 10, mse, true);
-	// double bestmse=0;
-	// int bestunits=11;
-	// double bestlr=0.005;
-	// vector<datapoint> best_prediction = RBFNN.startTesting(testing_data,testing_labels,bestmse);
-
+	RBFNetwork RBFNN(training_data, training_labels, testing_data, testing_labels, num_predict);
 	// Experimenting results for different number of RBF units and learning rates
 	double bestmse=1e7;
 	int bestunits;
 	double bestlr;
 	vector<datapoint> best_prediction;
-	for(int rbf_units = 3 ; rbf_units<=100 ; rbf_units+=2)
+	for(int rbf_units = 3 ; rbf_units<=50 ; rbf_units+=2)
 	{
 		for(double learning = 0.001 ; learning<=0.2 ; learning*=2.0)
 		{
 			printf("RBF Network with %d units, learning rate=%f\n", rbf_units, learning);
 			double mse=0;
-			RBFNN.startTraining(rbf_units, learning, 10, mse, true);
-			double test_mse=0;
-			vector<datapoint> prediction = RBFNN.startTesting(testing_data,testing_labels,test_mse);
-			if (test_mse<bestmse)
+			vector<datapoint> prediction = RBFNN.startTraining(rbf_units, learning, 50, mse, true);
+			// double test_mse=0;
+			// vector<datapoint> prediction = RBFNN.startTesting(testing_data,testing_labels,test_mse);
+			if (mse<bestmse)
 			{
-				bestmse = test_mse;
+				bestmse = mse;
 				bestunits = rbf_units;
 				bestlr = learning;
 				best_prediction = prediction;
@@ -112,18 +105,18 @@ int main()
   			}
   		}
   	}
-  	// sheet = e.AddWorksheet("Test", 2);
-  	// sheet = e.GetWorksheet(2);
-  	// if(sheet)
-  	// {
-  	// 	for(size_t r=0; r<testing_labels.size(); ++r)
-  	// 	{
-  	// 		for (size_t c=0;c<testing_labels[r].size();++c)
-  	// 		{
-  	// 			sheet->Cell(r,c)->SetDouble(testing_labels[r][c]);
-  	// 		}
-  	// 	}
-  	// }
+  	sheet = e.AddWorksheet("Real", 2);
+  	sheet = e.GetWorksheet(2);
+  	if(sheet)
+  	{
+  		for(size_t r=0; r<testing_labels.size(); ++r)
+  		{
+  			for (size_t c=0;c<testing_labels[r].size();++c)
+  			{
+  				sheet->Cell(r,c)->SetDouble(testing_labels[r][c]);
+  			}
+  		}
+  	}
   	e.SaveAs("predict.xls");
 	return 0;
 }
